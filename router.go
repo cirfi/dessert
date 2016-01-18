@@ -4,25 +4,25 @@ import (
 	"net/http"
 )
 
-type Route struct {
+type route struct {
 	handler  map[string]Handler
 	pattern  string 			// TODO: "All", "Single", "RegExp"
 }
 
 type Router struct {
-	method  map[string]*Route
+	method  map[string]*route
 }
 
 func NewRouter() *Router {
 	r := new(Router)
-	r.method = make(map[string]*Route)
-	r.method["GET"] = new(Route)
-	r.method["POST"] = new(Route)
-	r.method["OPTIONS"] = new(Route)
-	r.method["HEAD"] = new(Route)
-	r.method["PUT"] = new(Route)
-	r.method["DELETE"] = new(Route)
-	r.method["TRACE"] = new(Route)
+	r.method = make(map[string]*route)
+	r.method["GET"] = new(route)
+	r.method["POST"] = new(route)
+	r.method["OPTIONS"] = new(route)
+	r.method["HEAD"] = new(route)
+	r.method["PUT"] = new(route)
+	r.method["DELETE"] = new(route)
+	r.method["TRACE"] = new(route)
 	return r
 }
 
@@ -35,7 +35,6 @@ func (r *Router) RouterHandler(next Handler) Handler {
 					next(c)
 				}
 			} else {
-				c.Res.Header().Set("Status", "404")
 				http.Error(c.Res, http.StatusText(404), 404)
 			}
 		}

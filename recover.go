@@ -10,7 +10,6 @@ func Recover(next http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("[Panic] %+v", err)
-				w.Header().Set("Status", "500")
 				http.Error(w, http.StatusText(500), 500)
 			}
 		}()

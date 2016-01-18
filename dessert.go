@@ -10,6 +10,7 @@
 package dst
 
 import (
+ 	"fmt"
 	"log"
 	"net/http"
 )
@@ -22,11 +23,13 @@ type ContextConstructor func(Handler) http.Handler
 
 type RouterConstructor func(Handler) Handler
 
+type StaticConstructor func(Handler, string) Handler
+
 type Dessert struct {
 	port           string
 	context        ContextConstructor
 	router         RouterConstructor
-	static         RouterConstructor
+	static         StaticConstructor
 	staticPath     string
 	notFound       RouterConstructor
 	middlewares    []Constructor
@@ -45,7 +48,7 @@ func (d *Dessert) UseRouter(r RouterConstructor) {
 	d.router = r
 }
 
-func (d *Dessert) ServeStatic(r RouterConstructor, path string) {
+func (d *Dessert) ServeStatic(r StaticConstructor, path string) {
 	d.static = r
 	d.staticPath = path
 }
@@ -56,7 +59,18 @@ func (d *Dessert) NotFound(r RouterConstructor) {
 
 // Inspired by https://github.com/justinas/alice
 func (d *Dessert) chain() {
-	handler := d.context(d.router(d.static(d.notFound(nil))))
+	//handler := d.context(d.router(d.static(d.notFound(nil), d.staticPath)))
+	var handler0 Handler
+	if d.notFound != nil {
+		handler0 = d.notFound(nil)
+	}
+	if d.static != nil {
+		handler0 = d.static(handler0, d.staticPath)
+	}
+	if d.router != nil {
+		handler0 = d.router(handler0)
+	}
+	handler := d.context(handler0)
 	for i := len(d.middlewares) - 1; i >= 0; i-- {
 		handler = d.middlewares[i](handler)
 	}
@@ -64,6 +78,10 @@ func (d *Dessert) chain() {
 }
 
 func (d *Dessert) Run() {
+	if d.context == nil {
+		fmt.Println("Set Context Handler before run the server.")
+		return
+	}
 	d.chain()
 	//http.Handle("/", d.chainedHandler)
 	log.Printf("The Dessert server is listening on port %v.", d.port[1:])
@@ -86,7 +104,7 @@ func DefaultServer() (*Dessert, *Router) {
 	d.UseContext(ContextHandler)
 	r := NewRouter()
 	d.UseRouter(r.RouterHandler)
-	d.ServeStatic(d.Static, "")
+	d.ServeStatic(Static, "")
 	d.NotFound(NotFoundPage)
 	return d, r
 }

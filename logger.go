@@ -20,11 +20,7 @@ func Logger(next http.Handler) http.Handler {
 		if next != nil {
 			next.ServeHTTP(w, r)
 		}
-		status := w.Header().Get("Status")
-		if status == "" {
-			status = "200"
-		}
-		log.Printf("[%s] %s %v from %s in %v\n", r.Method, r.URL, status, addr, time.Since(start))
+		log.Printf("[%s] %s from %s in %v\n", r.Method, r.URL, addr, time.Since(start))
 	}
 	return http.HandlerFunc(fn)
 }
